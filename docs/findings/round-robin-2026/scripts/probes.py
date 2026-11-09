@@ -1,4 +1,5 @@
 import json,glob,collections,statistics as st,math
+from clocktower.probe import living_demon
 R=json.load(open('docs/plans/f2-ratings.json'))
 elo={m['id']:m for m in R['models']}
 games=sorted(glob.glob('games/v16/f2-*/game-*')+glob.glob('games/v17/f3*/game-*'))
@@ -14,13 +15,14 @@ for g in games:
     pts=collections.defaultdict(list)
     for l in open(g+'/probes.jsonl'):
         r=json.loads(l)
-        if r.get('players'): pts[(r['day'],r['point'])].append(r)
+        pts[(r['day'],r['point'])].append(r)  # failed probes still record whether their seat is alive
     d1=None
     for (day,pt),rs in sorted(pts.items()):
-        truth=rs[0]['truth']; imp=next((n for n,t in truth.items() if t['character']=='Imp'),None)
+        truth=rs[0]['truth']
+        imp=living_demon({n:t['character'] for n,t in truth.items()}, (r['player'] for r in rs if r.get('alive')))
         if not imp: continue
         n=len(truth)
-        goods=[r for r in rs if r['team']=='good']
+        goods=[r for r in rs if r['team']=='good' and r.get('players')]
         for r in goods:
             P=r['players']; others=[k for k in P if k!=r['player']]
             dem={k:P[k].get('demon') for k in others if P[k].get('demon') is not None}

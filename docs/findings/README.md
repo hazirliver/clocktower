@@ -7,6 +7,10 @@ logs and analysis scripts) and checked against the logs; every quote is from `ev
 
 To rerun an analysis, fetch the logs first (`python -m clocktower fetch 'v17/f3-*'`, see the main README).
 
+The historical Demon-belief figures below need recomputing: the original scorers sometimes selected a dead Imp
+after a starpass or Scarlet Woman succession. The analysis code now selects the living Imp at each probe point;
+the stored reports and derived figures have not been regenerated. Winner-based ratings are unaffected.
+
 ## Results (2026 models, protocol v16/v17)
 
 | Report | Question | Headline |

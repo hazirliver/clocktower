@@ -2,6 +2,7 @@
 python docs/findings/why-openai-wins/scripts/analyze.py GAMES.json [OUT.json]"""
 import json, sys, collections, statistics as st
 import numpy as np
+from clocktower.probe import living_demon
 
 R = json.load(open(sys.argv[1]))
 OUT = sys.argv[2] if len(sys.argv) > 2 else None
@@ -132,7 +133,8 @@ def m_imp_d(day):
         s = c = 0
         for p in g['probes']:
             if p['team'] != 'good' or p['pt'] != 'nominations' or p['day'] != day: continue
-            imp = next((k for k, t in p['truth'].items() if t[0] == 'Imp'), None)
+            alive = (q['who'] for q in g['probes'] if q['day'] == day and q['pt'] == p['pt'] and q['alive'])
+            imp = living_demon({k: t[0] for k, t in p['truth'].items()}, alive)
             if imp and imp != p['who'] and imp in p['P'] and p['P'][imp][1] is not None:
                 s += p['P'][imp][1]; c += 1
         return (s, c)
