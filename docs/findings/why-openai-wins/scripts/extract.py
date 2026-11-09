@@ -120,10 +120,10 @@ for d, res, cfg in games():
     if os.path.exists(d + '/probes.jsonl'):
         for l in open(d + '/probes.jsonl'):
             p = json.loads(l)
-            if not p.get('players'): continue
+            # Failed replies still identify living seats, needed to locate the current Demon after a transfer.
             pr.append(dict(day=p['day'], pt=p['point'], who=p['player'], team=p['team'], alive=p['alive'],
                            claim=(p.get('claim') or ''), P={k: [v.get('evil'), v.get('demon'), v.get('character')]
-                                                             for k, v in p['players'].items()},
+                                                             for k, v in p.get('players', {}).items()},
                            truth={k: [t['character'], t['evil']] for k, t in p['truth'].items()}))
     # belief-shift rows (good seats, dawn -> nominations same day)
     shift = []

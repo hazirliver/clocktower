@@ -16,6 +16,7 @@ import math
 import statistics
 from collections import defaultdict
 from pathlib import Path
+from .probe import living_demon
 
 EVIL = {'Imp', 'Poisoner', 'Spy', 'Scarlet Woman', 'Baron'}
 from .characters import GOOD as _GOOD
@@ -80,7 +81,8 @@ def game_metrics(path):
         by_point[(r['day'], r['point'])].append(r)
     for (day, point), rs in by_point.items():
         truth = rs[0]['truth']
-        imp = next((n for n, t in truth.items() if t['character'] == 'Imp'), None)
+        imp = living_demon({n: t['character'] for n, t in truth.items()},
+                           (r['player'] for r in rs if r.get('alive')))
         good_reads = [r for r in rs if r['team'] == 'good' and r.get('players')]
         town = {}
         for n in truth:
