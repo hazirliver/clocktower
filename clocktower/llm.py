@@ -14,12 +14,14 @@ attempts stops the game (SeatFailed), which then resumes from its last checkpoin
 """
 from __future__ import annotations
 import asyncio
+import fcntl
 import http.client
 import json
 import math
 import os
 import random
 import time
+import threading
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -155,23 +157,40 @@ class SeatFailed(RuntimeError):
 
 
 class Ledger:
-    """Append-only record of API spend, shared by every game that points at it."""
+    """Shared append-only spend log. The CLI cap stops new calls; in-flight calls can still overshoot it."""
 
     def __init__(self, path, cap=None):
         self.path, self.cap = Path(path), cap
         self.spent = 0.0
-        if self.path.exists():
-            self.spent = sum(json.loads(line)['cost'] for line in self.path.read_text().splitlines() if line.strip())
+        self._offset = 0
+        self._lock = threading.Lock()
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.open('a+') as f:
+            fcntl.flock(f, fcntl.LOCK_SH)
+            self._refresh(f)
+
+    def _refresh(self, f):
+        """Read only new records, under a file lock so another process cannot expose a partial append."""
+        f.seek(self._offset)
+        added = sum(json.loads(line)['cost'] for line in f.read().splitlines() if line.strip())
+        self.spent += added
+        self._offset = f.tell()
 
     def check(self):
-        if self.cap is not None and self.spent >= self.cap:
-            raise BudgetExceeded(f'spend ${self.spent:.2f} has reached the cap ${self.cap:.2f}')
+        with self._lock, self.path.open() as f:
+            fcntl.flock(f, fcntl.LOCK_SH)
+            self._refresh(f)
+            if self.cap is not None and self.spent >= self.cap:
+                raise BudgetExceeded(f'spend ${self.spent:.2f} has reached the cap ${self.cap:.2f}')
 
     def add(self, amount, **meta):
-        self.spent += amount
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open('a') as f:
+        with self._lock, self.path.open('a+') as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            self._refresh(f)
             f.write(json.dumps({'time': time.time(), 'cost': amount, **meta}) + '\n')
+            f.flush()
+            self.spent += amount
+            self._offset = f.tell()
 
 
 def make_client():
