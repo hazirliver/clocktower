@@ -72,7 +72,8 @@ in the pull request and show that a seed replays identically.
 ## Running experiments that cost money
 
 Every game costs from about $2 (cheap models) to $50+ (the largest models, 12 players, long games). Set
-`--budget` or a plan's `budget`; it caps the all-time spend in `games/ledger.jsonl`. Start with one side-swapped
+`--budget` or a plan's `budget`; it stops new calls when the shared all-time spend in `games/ledger.jsonl` reaches
+the threshold. Calls already in flight may exceed it, so this is not a hard billing cap. Start with one side-swapped
 pair, read a transcript, then scale. Use fresh seeds (blocks of 100 per matchup, not overlapping existing batches
 in `experiments/`), and decide in advance how many games you will run and how you will allocate extra ones
 (`python -m clocktower allocate`): never add games because results lean one way.

@@ -77,7 +77,8 @@ A game directory holds `transcript.md` (an omniscient replay with every seat's t
 event, with who could see it), `calls.jsonl` (every API call with tokens and cost), `probes.jsonl` (belief probes),
 `conversations/` (each seat's full API conversation), `config.json` and `result.json`. `replay DIR --view Casey`
 shows the game as one seat saw it (`--thinking` adds its reasoning). Spend is appended to `games/ledger.jsonl`, and
-`--budget` (default $1,000) caps it.
+`--budget` (default $1,000) stops new calls once the shared recorded spend reaches it. Requests already in flight
+can exceed this threshold; it is not a hard billing cap.
 
 Keys: `ANTHROPIC_API_KEY` for Claude models, `OPENAI_API_KEY` for OpenAI models, `OPENROUTER_API_KEY` only for
 models no longer served by their lab (Opus 4.1, Sonnet 4). The log dataset is public, so downloads need no token.
@@ -100,8 +101,8 @@ python -m clocktower analyze games/v17/mine-*/game-*                # win rates,
 ```
 
 A plan is JSON: a list of matchups, each with `good`, `evil`, `pairs` and optionally `seed`, `args` (extra `run`
-flags), `good_effort`/`evil_effort`, `seat_models` or `minions`; a top-level `budget` caps all-time spend
-(`games/ledger.jsonl`). Every game has its own seed; a side-swapped pair shares one. `tournament` deals each pair's
+flags), `good_effort`/`evil_effort`, `seat_models` or `minions`; a top-level `budget` sets the same stopping threshold
+on all-time spend across processes (`games/ledger.jsonl`). Every game has its own seed; a side-swapped pair shares one. `tournament` deals each pair's
 guaranteed Minion so the batch is balanced across Minions and models.
 
 Controlling a running batch:

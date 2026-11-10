@@ -333,7 +333,8 @@ def main(argv=None):
                                 'team, picked by seed) or CHARACTER:MODEL (e.g. Imp:gpt-6-astra); MODEL@effort ok')
             p.add_argument('--max-output', type=int, default=8000,
                            help='per-turn output ceiling, thinking included, identical for every model')
-            p.add_argument('--budget', type=float, default=1000.0, help='cap on total spend in games/ledger.jsonl')
+            p.add_argument('--budget', type=float, default=1000.0,
+                           help='stop new calls at this shared spend in games/ledger.jsonl (in-flight calls may exceed it)')
             p.add_argument('--concurrency', type=int, default=0,
                            help='cap on API requests in flight (0 = no cap: every game and seat runs at once; '
                                 'rate limits are handled by retries)')
