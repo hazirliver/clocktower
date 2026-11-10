@@ -36,6 +36,12 @@ def prompt(evil):
     return ' '.join((HEAD, EVIL if evil else GOOD, TAIL))
 
 
+def living_demon(characters, alive):
+    """Dead Imps retain their character after a transfer; score only an unambiguous living Imp."""
+    candidates = [name for name in set(alive) if characters.get(name) == 'Imp']
+    return candidates[0] if len(candidates) == 1 else None
+
+
 def _pct(s):
     m = re.search(r'\d+(?:\.\d+)?', s or '')
     return max(0.0, min(100.0, float(m.group()))) / 100 if m else None

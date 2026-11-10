@@ -1,0 +1,16 @@
+{
+  "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507": {
+    "window": 32768,
+    "max_output": 8000,
+    "memory": "replies",
+    "reasoning_effort": false,
+    "prices": {"input": null, "output": null, "read": null}
+  },
+  "nebius:Qwen/Qwen3-235B-A22B-Instruct-2507": {
+    "window": 32768,
+    "max_output": 8000,
+    "memory": "replies",
+    "reasoning_effort": false,
+    "prices": {"input": null, "output": null, "read": null}
+  }
+}

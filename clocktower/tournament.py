@@ -34,6 +34,8 @@ UPLOAD_EVERY = 1800  # seconds between snapshots of the plan's games to the Hugg
 def upload(plan):
     """Snapshot the plan's game folders (finished games, and checkpoints of unfinished ones) to the log
     dataset, so a replaced machine loses nothing: `fetch` them back and rerun `tournament` to resume."""
+    if plan.get('upload') is not True:
+        return
     from huggingface_hub import HfApi
     from .store import REPO
     out = Path(plan['out'])
@@ -48,7 +50,7 @@ def upload(plan):
 
 def make_plan(models, within=None, pairs=1, seed=80000, out='games/v12/f1', players='10-12'):
     """Every pair of models at most `within` places apart in the list (all pairs if None)."""
-    ms = [m if isinstance(m, dict) else {'id': m, 'short': m} for m in models]
+    ms = [m if isinstance(m, dict) else {'id': m, 'short': m.replace(':', '-').replace('/', '-')} for m in models]
     matchups = []
     for (i, a), (j, b) in itertools.combinations(enumerate(ms), 2):
         if within is None or j - i <= within:
@@ -109,6 +111,9 @@ def _matchup_commands(plan):
                '--seed', str(m.get('seed', plan['seed'] + SEEDS_PER_MATCHUP * i)), '--players', str(plan.get('players', '10-12')),
                '--good-model', m['good'], '--evil-model', m['evil'], '--out', f"{plan['out']}-{m['name']}",
                '--budget', str(plan.get('budget', 100000))]
+        for flag in ('nebius_config', 'ledger'):
+            if plan.get(flag):
+                cmd += [f"--{flag.replace('_', '-')}", plan[flag]]
         for flag in ('good_effort', 'evil_effort'):
             if m.get(flag):
                 cmd += [f"--{flag.replace('_', '-')}", m[flag]]
@@ -160,14 +165,14 @@ def run(path, dry=False, only=None):
         return 0
     print(f'launched {len(procs)} processes; logs in {logs}/', flush=True)
     done = threading.Event()
-    if os.environ.get('HF_TOKEN'):
+    if plan.get('upload') is True and os.environ.get('HF_TOKEN'):
         def snapshots():
             while not done.wait(UPLOAD_EVERY):
                 upload(plan)
         threading.Thread(target=snapshots, daemon=True).start()
     failed = [name for name, p in procs if p.wait() != 0]
     done.set()
-    if os.environ.get('HF_TOKEN'):
+    if plan.get('upload') is True and os.environ.get('HF_TOKEN'):
         upload(plan)
     print('all matchups finished' + (f'; failed: {", ".join(failed)}' if failed else ''))
     return 1 if failed else 0

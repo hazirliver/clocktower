@@ -56,7 +56,11 @@ class Shared:
 def shared(args):
     if args.workspace:
         os.environ.setdefault('ANTHROPIC_WORKSPACE_ID', args.workspace)
-    return Shared(make_client(), Ledger(GAMES / 'ledger.jsonl', cap=args.budget), limiter(args.concurrency))
+    from .nebius import configure
+    if getattr(args, 'nebius_config', None):
+        configure(args.nebius_config)
+    return Shared(None, Ledger(getattr(args, 'ledger', None) or GAMES / 'ledger.jsonl', cap=args.budget),
+                  limiter(args.concurrency))
 
 
 def table_size(players, seed):
@@ -96,7 +100,9 @@ def seat_models(g, args, seed):
     for override in getattr(args, 'seat_model', None) or []:
         who, _, rest = override.partition(':')
         if who in ('good', 'evil'):
-            model, _, n = rest.partition(':')
+            model, sep, n = rest.rpartition(':')
+            if not sep or not n.isdigit():
+                model, n = rest, '1'
             effort = {'good': args.good_effort, 'evil': args.evil_effort}[who] or args.effort
             seats = sorted(p.name for p in g.players if p.evil == (who == 'evil'))
             for name in rng.sample(seats, int(n or 1)):
@@ -140,6 +146,8 @@ def build(args, seed, out, env: Shared | None = None, humans=None, minion=None):
         if model == 'random':
             return RandomSeat(name, random.Random(bots.random()), names)
         system = player_system(len(names), spec(model)['memory'], args.private_beats)
+        if env.client is None and not model.startswith(('nebius:', 'openrouter:', 'gpt-', 'o1', 'o3', 'o4')):
+            env.client = make_client()
         c = conversation(env.client, system, player_schema(names), label=name, ledger=env.ledger,
                          semaphore=env.semaphore, on_call=game.record_call, model=model, effort=effort,
                          max_tokens=args.max_output, ttl=ttl, flex=args.flex)
@@ -161,7 +169,15 @@ def build(args, seed, out, env: Shared | None = None, humans=None, minion=None):
               'openai_tier': 'flex' if args.flex else 'default',
               'players': len(names), 'players_arg': str(args.players),
               'player_prompt_sha': hashlib.sha256(player_system(len(names), private_beats=args.private_beats).encode()).hexdigest()[:12]}
-    (out / 'config.json').write_text(json.dumps(config, indent=2))
+    from .nebius import snapshot
+    if snapshot():
+        config['nebius'] = snapshot()
+    previous = out / 'config.json'
+    if (out / 'checkpoint.pkl').exists() and previous.exists():
+        old = json.loads(previous.read_text())
+        if (old.get('nebius') or config.get('nebius')) and old != config:
+            raise ValueError('Resume configuration differs from checkpoint run; restore the original settings')
+    previous.write_text(json.dumps(config, indent=2))
     return game, convs
 
 
@@ -289,6 +305,7 @@ def main(argv=None):
     ra.add_argument('--games', default=str(GAMES), help='folder holding v16/ and v17/ game logs (events.jsonl needed)')
     ra.add_argument('--models', default=str(ROOT / 'experiments/models-2026.json'))
     ra.add_argument('--out', default=str(ROOT / 'docs/plans/f2-ratings.json'))
+    ra.add_argument('--batches', nargs='+', help='batch globs under --games, for a separate experiment fit')
     ra.add_argument('--boot', type=int, default=500, help='bootstrap resamples (over side-swapped pairs)')
     ra.add_argument('--no-page', dest='page', action='store_false', help="don't rebuild the HTML pages")
     ra.add_argument('--lab-trends', action='store_true', help='also per-lab gains (docs/charts/lab-trends.json)')
@@ -322,6 +339,8 @@ def main(argv=None):
         if name in ('run', 'sim'):
             p.add_argument('--games', type=int, default=1)
         if name != 'sim':
+            p.add_argument('--nebius-config', help='Token Factory model capabilities and prices JSON')
+            p.add_argument('--ledger', help='shared spend ledger (default games/ledger.jsonl)')
             p.add_argument('--model', default=MODEL, help='player model')
             p.add_argument('--good-model', help='model for the good team (default --model)')
             p.add_argument('--evil-model', help='model for the evil team (default --model)')
@@ -333,7 +352,8 @@ def main(argv=None):
                                 'team, picked by seed) or CHARACTER:MODEL (e.g. Imp:gpt-6-astra); MODEL@effort ok')
             p.add_argument('--max-output', type=int, default=8000,
                            help='per-turn output ceiling, thinking included, identical for every model')
-            p.add_argument('--budget', type=float, default=1000.0, help='cap on total spend in games/ledger.jsonl')
+            p.add_argument('--budget', type=float, default=1000.0,
+                           help='stop new calls at this shared spend in games/ledger.jsonl (in-flight calls may exceed it)')
             p.add_argument('--concurrency', type=int, default=0,
                            help='cap on API requests in flight (0 = no cap: every game and seat runs at once; '
                                 'rate limits are handled by retries)')
@@ -387,7 +407,7 @@ def main(argv=None):
         raise SystemExit(tournament(args.plan, args.dry_run, only))
     elif args.command == 'ratings':
         from .ratings import main as ratings
-        ratings(args.games, args.out, args.models, args.boot, args.page, args.lab_trends)
+        ratings(args.games, args.out, args.models, args.boot, args.page, args.lab_trends, batches=args.batches)
     elif args.command == 'fetch':
         from .store import fetch
         print(fetch(args.patterns))

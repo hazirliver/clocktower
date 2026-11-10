@@ -1,0 +1,160 @@
+{
+  "date": "2026-11-10",
+  "endpoint": "https://api.tokenfactory.nebius.com/v1/chat/completions",
+  "live_games": 0,
+  "pricing": "Illustrative USD/M: input=1, cached input=1, output=3. Actual billing unverified.",
+  "memory_smoke": [
+    {
+      "model": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "first": {
+        "answer": "ok"
+      },
+      "probe": {
+        "answer": "amber-4729"
+      },
+      "second": {
+        "answer": "amber-4729"
+      },
+      "probe_isolated": true,
+      "calls": [
+        {
+          "usage": {
+            "completion_tokens": 10,
+            "prompt_tokens": 32,
+            "total_tokens": 42,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "cost_at_illustrative_rates": 6.2e-05,
+          "stop": "end_turn"
+        },
+        {
+          "usage": {
+            "completion_tokens": 15,
+            "prompt_tokens": 58,
+            "total_tokens": 73,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 32
+            }
+          },
+          "cost_at_illustrative_rates": 0.000103,
+          "stop": "end_turn"
+        },
+        {
+          "usage": {
+            "completion_tokens": 15,
+            "prompt_tokens": 58,
+            "total_tokens": 73,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "cost_at_illustrative_rates": 0.000103,
+          "stop": "end_turn"
+        }
+      ]
+    },
+    {
+      "model": "nebius:Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "first": {
+        "answer": "ok"
+      },
+      "probe": {
+        "answer": "amber-4729"
+      },
+      "second": {
+        "answer": "amber-4729"
+      },
+      "probe_isolated": true,
+      "calls": [
+        {
+          "usage": {
+            "completion_tokens": 7,
+            "prompt_tokens": 32,
+            "total_tokens": 39,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "cost_at_illustrative_rates": 5.3e-05,
+          "stop": "end_turn"
+        },
+        {
+          "usage": {
+            "completion_tokens": 12,
+            "prompt_tokens": 55,
+            "total_tokens": 67,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "cost_at_illustrative_rates": 9.1e-05,
+          "stop": "end_turn"
+        },
+        {
+          "usage": {
+            "completion_tokens": 12,
+            "prompt_tokens": 55,
+            "total_tokens": 67,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 48
+            }
+          },
+          "cost_at_illustrative_rates": 9.1e-05,
+          "stop": "end_turn"
+        }
+      ]
+    }
+  ],
+  "player_schema_smoke": [
+    {
+      "model": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "action": {
+        "say": "",
+        "whispers": [],
+        "nominate": null,
+        "vote": null,
+        "targets": [],
+        "slayer_shot": null
+      },
+      "calls": [
+        {
+          "usage": {
+            "completion_tokens": 41,
+            "prompt_tokens": 45,
+            "total_tokens": 86,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "cost_at_illustrative_rates": 0.000168,
+          "stop": "end_turn"
+        }
+      ]
+    },
+    {
+      "model": "nebius:Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "action": {
+        "say": "hello",
+        "whispers": [],
+        "nominate": null,
+        "vote": null,
+        "targets": [],
+        "slayer_shot": null
+      },
+      "calls": [
+        {
+          "usage": {
+            "completion_tokens": 43,
+            "prompt_tokens": 45,
+            "total_tokens": 88,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "cost_at_illustrative_rates": 0.000174,
+          "stop": "end_turn"
+        }
+      ]
+    }
+  ]
+}

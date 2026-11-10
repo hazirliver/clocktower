@@ -16,7 +16,7 @@ import json
 import re
 from pathlib import Path
 
-from .llm import Ledger, NoLimit, conversation, make_client
+from .llm import Ledger, NoLimit, conversation, make_client, OPENAI_PREFIXES
 
 SYSTEM = 'You are taking part in a short test of your memory across turns. Answer in the JSON format given.'
 SCHEMA = {'type': 'object', 'properties': {'answer': {'type': 'string'}}, 'required': ['answer'],
@@ -36,6 +36,8 @@ def strip_reasoning(messages):
         if isinstance(m, dict) and isinstance(m.get('content'), list):
             m = {**m, 'content': [b for b in m['content'] if not (isinstance(b, dict) and b.get('type') in
                                                                    ('thinking', 'redacted_thinking'))]}
+        if isinstance(m, dict):
+            m = {k: v for k, v in m.items() if k not in ('reasoning', 'reasoning_content')}
         out.append(m)
     return out
 
@@ -51,7 +53,8 @@ async def trial(client, ledger, model, effort, carried):
 
 
 async def run(model, trials, effort, ledger_path):
-    client, ledger = make_client(), Ledger(ledger_path)
+    client = None if model.startswith(('nebius:', 'openrouter:', *OPENAI_PREFIXES)) else make_client()
+    ledger = Ledger(ledger_path)
     jobs = [trial(client, ledger, model, effort, carried) for carried in (True, False) for _ in range(trials)]
     return await asyncio.gather(*jobs)
 
@@ -59,11 +62,15 @@ async def run(model, trials, effort, ledger_path):
 def main(argv=None):
     ap = argparse.ArgumentParser(prog='clocktower memory-check', description=__doc__.split('\n\n')[0])
     ap.add_argument('model')
+    ap.add_argument('--nebius-config', help='Token Factory model capabilities and prices JSON')
     ap.add_argument('--trials', type=int, default=3, help='trials per condition (carried, stripped)')
     ap.add_argument('--effort', default='high')
     ap.add_argument('--ledger', default=str(Path(__file__).resolve().parent.parent / 'games' / 'ledger.jsonl'),
                     help='spend ledger to append to')
     args = ap.parse_args(argv)
+    if args.nebius_config:
+        from .nebius import configure
+        configure(args.nebius_config)
     results = asyncio.run(run(args.model, args.trials, args.effort, args.ledger))
     for r in results:
         print(json.dumps(r))

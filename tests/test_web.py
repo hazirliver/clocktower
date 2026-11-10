@@ -18,7 +18,7 @@ from unittest import mock
 import clocktower.web as web
 from clocktower.llm import BudgetExceeded
 from clocktower.state import Grimoire
-from clocktower.web import Hub, PlayLedger, RateLimited, Settings, Store, Table, assign, clean, evil_seats, redact, run_game
+from clocktower.web import Hub, PlayLedger, RateLimited, Settings, Table, assign, clean, evil_seats, redact, run_game
 
 # No test may reach a paid API: the house keys are taken out of the environment for this module (a test
 # that needs the server to "have" a key patches in a fake one, with a runner that plays no model).
