@@ -24,3 +24,6 @@ CLAUDE.md
 .claude/
 docs/blog/
 games/ledger.jsonl
+
+.env
+experiments/nebius-results/

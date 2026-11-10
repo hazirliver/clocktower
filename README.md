@@ -84,6 +84,12 @@ Keys: `ANTHROPIC_API_KEY` for Claude models, `OPENAI_API_KEY` for OpenAI models,
 models no longer served by their lab (Opus 4.1, Sonnet 4). The log dataset is public, so downloads need no token.
 `ANTHROPIC_WORKSPACE_ID` is optional (sent as the `anthropic-workspace-id` header if your organisation needs it).
 
+## Nebius Token Factory
+
+Use `nebius:<API model id>` with `TOKENFACTORY_API_KEY` and `--nebius-config` for explicit model capabilities
+and prices. Nebius-only runs need no other provider keys. See [setup, validation and experiment plan](docs/nebius.md).
+Tournament uploads are opt-in: a plan must set `"upload": true` as well as having `HF_TOKEN` in its environment.
+
 ## Running a matchup or a tournament
 
 ```sh

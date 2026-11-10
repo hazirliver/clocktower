@@ -106,6 +106,9 @@ MODELS = {
 
 
 def spec(model):
+    if model.startswith('nebius:'):
+        from .nebius import model_spec
+        return {'max_output': None, **model_spec(model)}
     return {'thinking': 'adaptive', 'effort': True, 'context': True, 'explicit_cache': True, 'summary': 'concise',
             'memory': 'reasoning', 'reasoning': True, 'window': None, 'max_output': None, 'can_disable_thinking': True,
             **MODELS.get(model, {})}
@@ -599,7 +602,12 @@ class OpenRouterConversation(_Base):
 
 
 def conversation(client, system, schema, *, model, **kw):
-    """A Claude, OpenAI or OpenRouter conversation, by model name."""
+    """A provider conversation, routed by explicit prefix or legacy model name."""
+    if model.startswith('nebius:'):
+        from .nebius import NebiusConversation
+        kw.pop('ttl', None)
+        kw.pop('flex', None)
+        return NebiusConversation(system, schema, model=model, **kw)
     if model.startswith('openrouter:'):
         kw.pop('ttl', None)
         kw.pop('flex', None)
@@ -608,4 +616,4 @@ def conversation(client, system, schema, *, model, **kw):
         kw.pop('ttl', None)  # a client may carry the OpenAI key to use (web.py's bring-your-own-key tables)
         return OpenAIConversation(system, schema, model=model, api_key=getattr(client, 'openai_api_key', None), **kw)
     kw.pop('flex', None)
-    return ClaudeConversation(client, system, schema, model=model, **kw)
+    return ClaudeConversation(client or make_client(), system, schema, model=model, **kw)

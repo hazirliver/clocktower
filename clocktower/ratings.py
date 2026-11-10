@@ -94,7 +94,10 @@ def q90(xs):
 
 def ratings(games, models, boot=500, seed=0):
     """The ratings JSON (docs/plans/f2-ratings.json)."""
+    if not games or not models or boot < 1:
+        raise ValueError('Ratings need finished games, models and at least one bootstrap sample')
     ms = models; names = [m['id'] for m in ms]; yrs = years(ms)
+    has_trend = len(set(yrs)) > 1
     comb, _, extra = fit(games, names); det, dec, _ = fit(games, names, split=True)
     pairs = by_pair(games)
     keys = list(pairs); rng = random.Random(seed); B = collections.defaultdict(list)
@@ -104,7 +107,8 @@ def ratings(games, models, boot=500, seed=0):
         for n in names:
             B['c' + n].append(c[n]); B['d' + n].append(d[n]); B['v' + n].append(v[n])
         for key, rr in (('slope_c', c), ('slope_d', d), ('slope_v', v)):
-            B[key].append(np.polyfit(yrs, [rr[n] for n in names], 1)[0])
+            if has_trend:
+                B[key].append(np.polyfit(yrs, [rr[n] for n in names], 1)[0])
     wins = collections.defaultdict(lambda: [0, 0, 0, 0])
     for g in games:
         wins[g['good']][0] += g['won']; wins[g['good']][1] += 1; wins[g['evil']][2] += not g['won']; wins[g['evil']][3] += 1
@@ -113,7 +117,7 @@ def ratings(games, models, boot=500, seed=0):
             'setup_effects': {**dict(zip(MINIONS, map(lambda x: round(float(x)), extra[:3]))),
                               '11 players': round(float(extra[3])), '12 players': round(float(extra[4]))},
             'trend_per_year': {k: [round(float(np.polyfit(yrs, [rr[n] for n in names], 1)[0])), q90(B['slope_' + k])]
-                               for k, rr in (('c', comb), ('d', det), ('v', dec))},
+                               for k, rr in (('c', comb), ('d', det), ('v', dec))} if has_trend else {},
             'models': [{'id': m['id'], 'date': m['released'], 'lab': m['lab'], 'combined': round(comb[m['id']]),
                         'c90': q90(B['c' + m['id']]), 'detection': round(det[m['id']]), 'd90': q90(B['d' + m['id']]),
                         'deception': round(dec[m['id']]), 'v90': q90(B['v' + m['id']]),
@@ -168,8 +172,12 @@ def lab_trends_page(data, trends, template=ROOT / 'docs/charts/lab-trends.templa
     Path(out).write_text(t.replace('__RATINGS__', json.dumps(data)).replace('__TRENDS__', json.dumps(trends)).replace('__GAMES__', str(data['games'])))
 
 
-def main(games_root=None, out=None, models=None, boot=500, page=True, trends=False, trends_out=None):
-    games = load(games_root or ROOT / 'games')
+def main(games_root=None, out=None, models=None, boot=500, page=True, trends=False, trends_out=None, batches=None):
+    if batches is not None and (not out or not models or page or trends
+                                or Path(models).resolve() == (ROOT / 'experiments/models-2026.json').resolve()
+                                or Path(out).resolve() == (ROOT / 'docs/plans/f2-ratings.json').resolve()):
+        raise ValueError('Custom batches require separate --out, --models and --no-page; no --lab-trends')
+    games = load(games_root or ROOT / 'games', batches=BATCHES if batches is None else batches)
     ms = json.loads(Path(models or ROOT / 'experiments/models-2026.json').read_text())
     data = ratings(games, ms, boot)
     out = Path(out or ROOT / 'docs/plans/f2-ratings.json')

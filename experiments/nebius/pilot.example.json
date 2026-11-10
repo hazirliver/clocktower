@@ -1,0 +1,18 @@
+{
+  "out": "experiments/nebius-results/pilot",
+  "seed": 91000000,
+  "players": "10-12",
+  "budget": 0,
+  "upload": false,
+  "nebius_config": "experiments/nebius-results/models.json",
+  "ledger": "experiments/nebius-results/ledger.jsonl",
+  "matchups": [
+    {
+      "name": "qwen30b-v-qwen235b",
+      "good": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "evil": "nebius:Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "pairs": 1,
+      "args": ["--parallel", "1", "--concurrency", "2"]
+    }
+  ]
+}
